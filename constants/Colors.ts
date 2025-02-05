@@ -25,8 +25,8 @@ export const Colors: {
   light: {
     text: "#11181C",
     background: "#fff",
-    joy: "#ffebee",
-    task: "#e8f5e9",
+    joy: "#FF4B4B",
+    task: "#4FD3C4",
     button: {
       start: "#4CAF50",
       stop: "#f44336",
@@ -36,8 +36,8 @@ export const Colors: {
   dark: {
     text: "#ECEDEE",
     background: "#151718",
-    joy: "#4a1c1c",
-    task: "#1c4a1c",
+    joy: "#FF4B4B",
+    task: "#4FD3C4",
     button: {
       start: "#4CAF50",
       stop: "#f44336",
