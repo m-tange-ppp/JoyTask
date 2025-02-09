@@ -1,5 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { TimeState } from "@/types/time";
+import { TimeState } from "@/types/timer";
+import {
+  calculateTotalTime,
+  convertMsToTimeState,
+} from "@/utils/timeCalculations";
 
 export function useTimer() {
   const [joyTime, setJoyTime] = useState<TimeState>({
@@ -34,19 +38,26 @@ export function useTimer() {
   const joyElapsedTimeRef = useRef<number>(0);
   const taskElapsedTimeRef = useRef<number>(0);
 
+  // 最新の経過時間を取得
+  const getCurrentElapsed = useCallback(
+    (
+      startTimeRef: React.MutableRefObject<number | null>,
+      elapsedTimeRef: React.MutableRefObject<number>
+    ) => {
+      if (!startTimeRef.current) return elapsedTimeRef.current;
+      const now = Date.now();
+      return now - startTimeRef.current + elapsedTimeRef.current;
+    },
+    []
+  );
+
   const updateTime = useCallback(
     (
       setTime: typeof setJoyTime,
       startTimeRef: React.MutableRefObject<number | null>,
       elapsedTimeRef: React.MutableRefObject<number>
     ) => {
-      const now = Date.now();
-      if (!startTimeRef.current) {
-        startTimeRef.current = now;
-      }
-
-      const currentElapsed =
-        now - startTimeRef.current + elapsedTimeRef.current;
+      const currentElapsed = getCurrentElapsed(startTimeRef, elapsedTimeRef);
       const hours = Math.floor(currentElapsed / 3600000);
       const minutes = Math.floor((currentElapsed % 3600000) / 60000);
       const seconds = Math.floor((currentElapsed % 60000) / 1000);
@@ -54,7 +65,7 @@ export function useTimer() {
 
       setTime({ hours, minutes, seconds, milliseconds });
     },
-    []
+    [getCurrentElapsed]
   );
 
   useEffect(() => {
@@ -70,10 +81,10 @@ export function useTimer() {
       );
     } else {
       if (joyStartTimeRef.current) {
-        const now = Date.now();
-        const elapsed =
-          now - joyStartTimeRef.current + joyElapsedTimeRef.current;
-        joyElapsedTimeRef.current = elapsed;
+        joyElapsedTimeRef.current = getCurrentElapsed(
+          joyStartTimeRef,
+          joyElapsedTimeRef
+        );
         joyStartTimeRef.current = null;
       }
     }
@@ -83,7 +94,7 @@ export function useTimer() {
         clearInterval(intervalId);
       }
     };
-  }, [isJoyActive, updateTime]);
+  }, [isJoyActive, updateTime, getCurrentElapsed]);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval>;
@@ -98,10 +109,10 @@ export function useTimer() {
       );
     } else {
       if (taskStartTimeRef.current) {
-        const now = Date.now();
-        const elapsed =
-          now - taskStartTimeRef.current + taskElapsedTimeRef.current;
-        taskElapsedTimeRef.current = elapsed;
+        taskElapsedTimeRef.current = getCurrentElapsed(
+          taskStartTimeRef,
+          taskElapsedTimeRef
+        );
         taskStartTimeRef.current = null;
       }
     }
@@ -111,7 +122,7 @@ export function useTimer() {
         clearInterval(intervalId);
       }
     };
-  }, [isTaskActive, updateTime]);
+  }, [isTaskActive, updateTime, getCurrentElapsed]);
 
   const toggleJoyTimer = () => {
     if (!isJoyActive) {
@@ -131,48 +142,39 @@ export function useTimer() {
     setIsTaskActive(!isTaskActive);
   };
 
-  // 時間計算のユーティリティ関数
-  const calculateTotalTime = (time: TimeState) => {
-    return (
-      time.hours * 3600000 +
-      time.minutes * 60000 +
-      time.seconds * 1000 +
-      time.milliseconds
-    );
-  };
-
-  const convertMsToTimeState = (ms: number): TimeState => {
-    const hours = Math.floor(ms / 3600000);
-    const minutes = Math.floor((ms % 3600000) / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    const milliseconds = ms % 1000;
-    return { hours, minutes, seconds, milliseconds };
-  };
-
-  // スワイプ完了時の処理を追加
+  // スワイプ完了時の処理
   const handleSwipeComplete = () => {
-    // 現在アクティブなタイマーの経過時間を含める
-    const currentJoyMs = isJoyActive
-      ? joyElapsedTimeRef.current +
-        (Date.now() - (joyStartTimeRef.current || Date.now()))
-      : joyElapsedTimeRef.current;
+    // 最新の経過時間を取得
+    const currentJoyMs = getCurrentElapsed(joyStartTimeRef, joyElapsedTimeRef);
+    const currentTaskMs = getCurrentElapsed(
+      taskStartTimeRef,
+      taskElapsedTimeRef
+    );
 
-    const currentTaskMs = isTaskActive
-      ? taskElapsedTimeRef.current +
-        (Date.now() - (taskStartTimeRef.current || Date.now()))
-      : taskElapsedTimeRef.current;
+    console.log("スワイプ完了時の状態:");
+    console.log("Joy Timer Active:", isJoyActive);
+    console.log("Task Timer Active:", isTaskActive);
+    console.log("Joy Elapsed:", currentJoyMs);
+    console.log("Task Elapsed:", currentTaskMs);
 
-    setTotalJoyTime((prev) => {
-      const totalMs = calculateTotalTime(prev) + currentJoyMs;
-      return convertMsToTimeState(totalMs);
-    });
+    // 累計時間を更新（先に保存）
+    if (currentJoyMs > 0) {
+      setTotalJoyTime((prev) => {
+        const totalMs = calculateTotalTime(prev) + currentJoyMs;
+        console.log("Total Joy Ms:", totalMs);
+        return convertMsToTimeState(totalMs);
+      });
+    }
 
-    setTotalTaskTime((prev) => {
-      const totalMs = calculateTotalTime(prev) + currentTaskMs;
-      return convertMsToTimeState(totalMs);
-    });
+    if (currentTaskMs > 0) {
+      setTotalTaskTime((prev) => {
+        const totalMs = calculateTotalTime(prev) + currentTaskMs;
+        console.log("Total Task Ms:", totalMs);
+        return convertMsToTimeState(totalMs);
+      });
+    }
 
-    // タイマーをリセット
+    // タイマーをリセット（その後でリセット）
     setIsJoyActive(false);
     setIsTaskActive(false);
     setJoyTime({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 });
@@ -190,15 +192,8 @@ export function useTimer() {
     isTaskActive,
     totalJoyTime,
     totalTaskTime,
-    setTotalJoyTime,
-    setTotalTaskTime,
     toggleJoyTimer,
     toggleTaskTimer,
-    setJoyTime,
-    setTaskTime,
-    setIsJoyActive,
-    setIsTaskActive,
     handleSwipeComplete,
-    calculateTotalTime,
   };
 }

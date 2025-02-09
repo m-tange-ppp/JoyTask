@@ -1,68 +1,39 @@
 import { StyleSheet, View, Animated } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "react-native";
 import { Timer } from "@/components/Timer";
-import { useTimer } from "@/hooks/useTimer";
+import { useTimerContext } from "@/contexts/TimerContext";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import { TimeState } from "@/types/time";
+import { calculateTotalTime } from "@/utils/timeCalculations";
 
 export default function DualTimerScreen() {
-  const colorScheme = useColorScheme() ?? "light";
-  const colors = Colors[colorScheme];
+  const colors = Colors[useColorScheme() ?? "light"];
   const {
     joyTime,
     taskTime,
     isJoyActive,
     isTaskActive,
-    totalJoyTime,
-    totalTaskTime,
-    setTotalJoyTime,
-    setTotalTaskTime,
     toggleJoyTimer,
     toggleTaskTimer,
-    setJoyTime,
-    setTaskTime,
-    setIsJoyActive,
-    setIsTaskActive,
     handleSwipeComplete,
-    calculateTotalTime,
-  } = useTimer();
+  } = useTimerContext();
 
   const { slideAnim, panHandlers } = useSwipeGesture({
     onSwipeComplete: handleSwipeComplete,
   });
 
-  // ミリ秒を時間形式に変換する関数
-  const convertMsToTimeState = (ms: number): TimeState => {
-    const hours = Math.floor(ms / 3600000);
-    const minutes = Math.floor((ms % 3600000) / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    const milliseconds = ms % 1000;
-    return { hours, minutes, seconds, milliseconds };
-  };
-
-  // 各タイマーの時間比率を計算
   const joyTotal = calculateTotalTime(joyTime);
   const taskTotal = calculateTotalTime(taskTime);
   const total = joyTotal + taskTotal;
-
-  // 比率を計算（0%～100%）
   const joyRatio = total === 0 ? 50 : (joyTotal / total) * 100;
   const taskRatio = total === 0 ? 50 : (taskTotal / total) * 100;
 
   return (
     <View style={styles.container}>
       <Animated.View
-        style={[
-          styles.mainContainer,
-          {
-            transform: [{ translateX: slideAnim }],
-          },
-        ]}
+        style={[styles.main, { transform: [{ translateX: slideAnim }] }]}
         {...panHandlers}
       >
-        {/* 背景レイヤー */}
         <View style={styles.backgroundLayer}>
           <View
             style={[
@@ -77,8 +48,6 @@ export default function DualTimerScreen() {
             ]}
           />
         </View>
-
-        {/* タイマーレイヤー */}
         <View style={styles.timersLayer}>
           <Timer
             title="Joy"
@@ -99,20 +68,13 @@ export default function DualTimerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    overflow: "hidden",
-  },
-  mainContainer: {
-    flex: 1,
-  },
+  container: { flex: 1, overflow: "hidden" },
+  main: { flex: 1 },
   backgroundLayer: {
     ...StyleSheet.absoluteFillObject,
     flexDirection: "column",
   },
-  background: {
-    width: "100%",
-  },
+  background: { width: "100%" },
   timersLayer: {
     ...StyleSheet.absoluteFillObject,
     flexDirection: "column",
