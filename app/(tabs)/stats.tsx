@@ -1,32 +1,25 @@
 import { View, StyleSheet, Dimensions } from "react-native";
-import { useCallback } from "react";
+import { useState } from "react";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "react-native";
 import { useTimerContext } from "@/contexts/TimerContext";
 import { TimeBar } from "@/components/Stats/TimeBar";
+import { Calendar } from "@/components/Stats/Calendar";
+import { DailyDetail } from "@/components/Stats/DailyDetail";
 import { formatTime } from "@/utils/formatTime";
 import { calculateTotalTime } from "@/utils/timeCalculations";
-import { useFocusEffect } from "expo-router";
 
 const WINDOW_WIDTH = Dimensions.get("window").width;
+const WINDOW_HEIGHT = Dimensions.get("window").height;
 const MAX_BAR_WIDTH = WINDOW_WIDTH * 0.7;
 
 export default function StatsScreen() {
   const colors = Colors[useColorScheme() ?? "light"];
-  const { totalJoyTime, totalTaskTime } = useTimerContext();
-
-  useFocusEffect(
-    useCallback(() => {
-      console.log("=== Stats Screen Focused ===");
-      console.log("Total Joy Time:", totalJoyTime);
-      console.log("Total Task Time:", totalTaskTime);
-      const joyS = calculateTotalTime(totalJoyTime) / 1000;
-      const taskS = calculateTotalTime(totalTaskTime) / 1000;
-      console.log("Joy Seconds:", joyS);
-      console.log("Task Seconds:", taskS);
-      console.log("========================");
-    }, [totalJoyTime, totalTaskTime])
+  const { totalJoyTime, totalTaskTime, dailyRecords, deleteDailyRecord } =
+    useTimerContext();
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
   );
 
   const joySeconds = calculateTotalTime(totalJoyTime) / 1000;
@@ -35,25 +28,45 @@ export default function StatsScreen() {
 
   return (
     <View style={styles.container}>
-      <ThemedText type="title" style={styles.header}>
-        累計時間
-      </ThemedText>
-      <View style={styles.graph}>
-        <TimeBar
-          label="Joy"
-          timeText={formatTime(joySeconds)}
-          barWidth={
-            maxSeconds > 0 ? (joySeconds / maxSeconds) * MAX_BAR_WIDTH : 0
-          }
-          barColor={colors.joy}
+      <View style={styles.section}>
+        <ThemedText type="title" style={styles.header}>
+          Total Time
+        </ThemedText>
+        <View style={styles.graph}>
+          <TimeBar
+            label="Joy"
+            timeText={formatTime(joySeconds)}
+            barWidth={
+              maxSeconds > 0 ? (joySeconds / maxSeconds) * MAX_BAR_WIDTH : 0
+            }
+            barColor={colors.joy}
+          />
+          <TimeBar
+            label="Task"
+            timeText={formatTime(taskSeconds)}
+            barWidth={
+              maxSeconds > 0 ? (taskSeconds / maxSeconds) * MAX_BAR_WIDTH : 0
+            }
+            barColor={colors.task}
+          />
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.section}>
+        <ThemedText type="title" style={styles.header}>
+          Daily Record
+        </ThemedText>
+        <Calendar
+          records={dailyRecords}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
         />
-        <TimeBar
-          label="Task"
-          timeText={formatTime(taskSeconds)}
-          barWidth={
-            maxSeconds > 0 ? (taskSeconds / maxSeconds) * MAX_BAR_WIDTH : 0
-          }
-          barColor={colors.task}
+        <DailyDetail
+          date={selectedDate}
+          record={dailyRecords[selectedDate]}
+          onDelete={deleteDailyRecord}
         />
       </View>
     </View>
@@ -63,13 +76,24 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#151718",
+    paddingTop: WINDOW_HEIGHT * 0.02,
+  },
+  section: {
+    paddingHorizontal: 20,
   },
   header: {
-    marginBottom: 40,
+    marginBottom: WINDOW_HEIGHT * 0.02,
     textAlign: "center",
     color: "#fff",
+    fontSize: WINDOW_HEIGHT * 0.035,
   },
-  graph: { gap: 30 },
+  graph: {
+    gap: WINDOW_HEIGHT * 0.015,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    marginVertical: WINDOW_HEIGHT * 0.02,
+  },
 });

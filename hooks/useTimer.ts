@@ -1,9 +1,23 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { TimeState } from "@/types/timer";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   calculateTotalTime,
   convertMsToTimeState,
 } from "@/utils/timeCalculations";
+
+type DailyTimeRecord = {
+  [date: string]: {
+    joy: TimeState;
+    task: TimeState;
+  };
+};
+
+const STORAGE_KEYS = {
+  TOTAL_JOY: "@joy_task_timer/total_joy",
+  TOTAL_TASK: "@joy_task_timer/total_task",
+  DAILY_RECORDS: "@joy_task_timer/daily_records",
+};
 
 export function useTimer() {
   const [joyTime, setJoyTime] = useState<TimeState>({
@@ -32,6 +46,7 @@ export function useTimer() {
     seconds: 0,
     milliseconds: 0,
   });
+  const [dailyRecords, setDailyRecords] = useState<DailyTimeRecord>({});
 
   const joyStartTimeRef = useRef<number | null>(null);
   const taskStartTimeRef = useRef<number | null>(null);
@@ -124,6 +139,54 @@ export function useTimer() {
     };
   }, [isTaskActive, updateTime, getCurrentElapsed]);
 
+  // データの読み込み
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [totalJoyStr, totalTaskStr, dailyRecordsStr] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.TOTAL_JOY),
+          AsyncStorage.getItem(STORAGE_KEYS.TOTAL_TASK),
+          AsyncStorage.getItem(STORAGE_KEYS.DAILY_RECORDS),
+        ]);
+
+        if (totalJoyStr) setTotalJoyTime(JSON.parse(totalJoyStr));
+        if (totalTaskStr) setTotalTaskTime(JSON.parse(totalTaskStr));
+        if (dailyRecordsStr) setDailyRecords(JSON.parse(dailyRecordsStr));
+      } catch (error) {
+        console.error("Error loading timer data:", error);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // データの保存
+  const saveData = useCallback(async () => {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(
+          STORAGE_KEYS.TOTAL_JOY,
+          JSON.stringify(totalJoyTime)
+        ),
+        AsyncStorage.setItem(
+          STORAGE_KEYS.TOTAL_TASK,
+          JSON.stringify(totalTaskTime)
+        ),
+        AsyncStorage.setItem(
+          STORAGE_KEYS.DAILY_RECORDS,
+          JSON.stringify(dailyRecords)
+        ),
+      ]);
+    } catch (error) {
+      console.error("Error saving timer data:", error);
+    }
+  }, [totalJoyTime, totalTaskTime, dailyRecords]);
+
+  // 状態が変更されたら保存
+  useEffect(() => {
+    saveData();
+  }, [totalJoyTime, totalTaskTime, dailyRecords, saveData]);
+
   const toggleJoyTimer = () => {
     if (!isJoyActive) {
       if (isTaskActive) {
@@ -144,37 +207,58 @@ export function useTimer() {
 
   // スワイプ完了時の処理
   const handleSwipeComplete = () => {
-    // 最新の経過時間を取得
+    const currentDate = new Date().toISOString().split("T")[0];
     const currentJoyMs = getCurrentElapsed(joyStartTimeRef, joyElapsedTimeRef);
     const currentTaskMs = getCurrentElapsed(
       taskStartTimeRef,
       taskElapsedTimeRef
     );
 
-    console.log("スワイプ完了時の状態:");
-    console.log("Joy Timer Active:", isJoyActive);
-    console.log("Task Timer Active:", isTaskActive);
-    console.log("Joy Elapsed:", currentJoyMs);
-    console.log("Task Elapsed:", currentTaskMs);
-
-    // 累計時間を更新（先に保存）
     if (currentJoyMs > 0) {
       setTotalJoyTime((prev) => {
         const totalMs = calculateTotalTime(prev) + currentJoyMs;
-        console.log("Total Joy Ms:", totalMs);
         return convertMsToTimeState(totalMs);
+      });
+
+      setDailyRecords((prev) => {
+        const prevDayRecord = prev[currentDate] || {
+          joy: { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 },
+          task: { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 },
+        };
+        const newJoyMs = calculateTotalTime(prevDayRecord.joy) + currentJoyMs;
+        return {
+          ...prev,
+          [currentDate]: {
+            ...prevDayRecord,
+            joy: convertMsToTimeState(newJoyMs),
+          },
+        };
       });
     }
 
     if (currentTaskMs > 0) {
       setTotalTaskTime((prev) => {
         const totalMs = calculateTotalTime(prev) + currentTaskMs;
-        console.log("Total Task Ms:", totalMs);
         return convertMsToTimeState(totalMs);
+      });
+
+      setDailyRecords((prev) => {
+        const prevDayRecord = prev[currentDate] || {
+          joy: { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 },
+          task: { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 },
+        };
+        const newTaskMs =
+          calculateTotalTime(prevDayRecord.task) + currentTaskMs;
+        return {
+          ...prev,
+          [currentDate]: {
+            ...prevDayRecord,
+            task: convertMsToTimeState(newTaskMs),
+          },
+        };
       });
     }
 
-    // タイマーをリセット（その後でリセット）
     setIsJoyActive(false);
     setIsTaskActive(false);
     setJoyTime({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0 });
@@ -185,6 +269,32 @@ export function useTimer() {
     taskElapsedTimeRef.current = 0;
   };
 
+  const deleteDailyRecord = useCallback(
+    async (date: string) => {
+      setDailyRecords((prev) => {
+        const newRecords = { ...prev };
+        delete newRecords[date];
+        return newRecords;
+      });
+
+      // 累計時間から削除する日の時間を引く
+      const recordToDelete = dailyRecords[date];
+      if (recordToDelete) {
+        setTotalJoyTime((prev) => {
+          const totalMs =
+            calculateTotalTime(prev) - calculateTotalTime(recordToDelete.joy);
+          return convertMsToTimeState(Math.max(0, totalMs));
+        });
+        setTotalTaskTime((prev) => {
+          const totalMs =
+            calculateTotalTime(prev) - calculateTotalTime(recordToDelete.task);
+          return convertMsToTimeState(Math.max(0, totalMs));
+        });
+      }
+    },
+    [dailyRecords]
+  );
+
   return {
     joyTime,
     taskTime,
@@ -192,8 +302,10 @@ export function useTimer() {
     isTaskActive,
     totalJoyTime,
     totalTaskTime,
+    dailyRecords,
     toggleJoyTimer,
     toggleTaskTimer,
     handleSwipeComplete,
+    deleteDailyRecord,
   };
 }

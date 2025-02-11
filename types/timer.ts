@@ -5,6 +5,13 @@ export type TimeState = {
   milliseconds: number;
 };
 
+export type DailyTimeRecord = {
+  [date: string]: {
+    joy: TimeState;
+    task: TimeState;
+  };
+};
+
 export type TimerProps = {
   title: string;
   time: TimeState;
@@ -24,4 +31,5 @@ export type TimerHookState = {
   taskTimer: TimerState;
   totalJoyTime: TimeState;
   totalTaskTime: TimeState;
+  dailyRecords: DailyTimeRecord;
 };
