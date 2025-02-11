@@ -1,5 +1,5 @@
 import { View, StyleSheet, Dimensions } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "react-native";
@@ -18,9 +18,29 @@ export default function StatsScreen() {
   const colors = Colors[useColorScheme() ?? "light"];
   const { totalJoyTime, totalTaskTime, dailyRecords, deleteDailyRecord } =
     useTimerContext();
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+
+  // 現在の日付を取得する関数
+  const getCurrentDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getCurrentDate());
+
+  // 日付が変わったときに選択日を更新
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const currentDate = getCurrentDate();
+      if (currentDate !== selectedDate) {
+        setSelectedDate(currentDate);
+      }
+    }, 1000 * 60); // 1分ごとにチェック
+
+    return () => clearInterval(timer);
+  }, [selectedDate]);
 
   const joySeconds = calculateTotalTime(totalJoyTime) / 1000;
   const taskSeconds = calculateTotalTime(totalTaskTime) / 1000;

@@ -40,6 +40,18 @@ export function useTimer() {
     ...INITIAL_TIME_STATE,
   });
   const [dailyRecords, setDailyRecords] = useState<DailyTimeRecord>({});
+  const [lastTimerCompletedAt, setLastTimerCompletedAt] = useState<string>(
+    () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    }
+  );
 
   const joyStartTimeRef = useRef<number | null>(null);
   const taskStartTimeRef = useRef<number | null>(null);
@@ -200,12 +212,33 @@ export function useTimer() {
 
   // スワイプ完了時の処理
   const handleSwipeComplete = () => {
-    const currentDate = new Date().toISOString().split("T")[0];
+    // 現地時間での日付を取得
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const currentDate = `${year}-${month}-${day}`;
+
     const currentJoyMs = getCurrentElapsed(joyStartTimeRef, joyElapsedTimeRef);
     const currentTaskMs = getCurrentElapsed(
       taskStartTimeRef,
       taskElapsedTimeRef
     );
+
+    console.log("Timer completed:", {
+      currentDate,
+      now: now.toString(),
+      timezone: now.getTimezoneOffset(),
+      joyMs: currentJoyMs,
+      taskMs: currentTaskMs,
+    });
+
+    if (currentJoyMs > 0 || currentTaskMs > 0) {
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
+      setLastTimerCompletedAt(`${currentDate}T${hours}:${minutes}:${seconds}`);
+    }
 
     if (currentJoyMs > 0) {
       setTotalJoyTime((prev) => {
@@ -300,5 +333,6 @@ export function useTimer() {
     toggleTaskTimer,
     handleSwipeComplete,
     deleteDailyRecord,
+    lastTimerCompletedAt,
   };
 }
