@@ -1,50 +1,67 @@
-# Welcome to your Expo app 👋
+# JoyTask - 楽しみと課題の時間管理アプリ 🎯
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+このアプリは、日々の活動を「楽しみ」と「課題」の 2 つのカテゴリーで時間管理できるシンプルなタイマーアプリです。
 
-## Get started
+## 機能
 
-1. Install dependencies
+- 「楽しみ」と「課題」の 2 つのタイマー
+- スワイプジェスチャーで計測完了
+- 日別の時間記録
+- 累計時間の表示
+- 統計画面での時間管理の可視化
+
+## 使い方
+
+1. タイマーの開始
+
+   - 「Joy」ボタン：楽しみの時間を計測
+   - 「Task」ボタン：課題の時間を計測
+   - ※同時に両方のタイマーを動かすことはできません
+
+2. タイマーの終了
+
+   - 画面を上にスワイプすると計測完了
+   - 計測した時間は自動的に保存され、統計に反映されます
+
+3. 統計の確認
+   - 「Stats」タブで日々の記録を確認
+   - 各日の記録は個別に削除可能
+
+## 開発者向け情報
+
+このプロジェクトは[Expo](https://expo.dev)を使用して作成されています。
+
+### セットアップ
+
+1. 依存関係のインストール
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. アプリの起動
 
    ```bash
-    npx expo start
+   npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+起動後、以下の方法でアプリを実行できます：
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- [開発ビルド](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android エミュレータ](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS シミュレータ](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 技術スタック
 
-## Get a fresh project
+- React Native
+- Expo
+- TypeScript
+- React Native Gesture Handler
+- AsyncStorage
 
-When you're ready, run:
+### 参考リンク
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Expo ドキュメント](https://docs.expo.dev/)
+- [Expo GitHub](https://github.com/expo/expo)
+- [Discord コミュニティ](https://chat.expo.dev)

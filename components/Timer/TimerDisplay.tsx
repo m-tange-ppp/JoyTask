@@ -1,13 +1,16 @@
 import { View, StyleSheet, Platform } from "react-native";
 import { ThemedText } from "../ThemedText";
 import { TimeState } from "@/types/timer";
-import { formatNumber } from "@/utils/formatTime";
 
 type TimerDisplayProps = {
   time: TimeState;
 };
 
 export function TimerDisplay({ time }: TimerDisplayProps) {
+  const formatNumber = (num: number, digits: number) => {
+    return num.toString().padStart(digits, "0");
+  };
+
   return (
     <View style={styles.wrapper}>
       <ThemedText type="timer" style={styles.text}>

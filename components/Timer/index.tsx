@@ -1,11 +1,18 @@
 import { View, StyleSheet } from "react-native";
+import { TimeState } from "@/types/timer";
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerButton } from "./TimerButton";
-import { TimerProps } from "@/types/timer";
+
+type TimerProps = {
+  title: string;
+  time: TimeState;
+  isActive: boolean;
+  onToggle: () => void;
+};
 
 export function Timer({ title, time, isActive, onToggle }: TimerProps) {
   return (
-    <View style={styles.timerContainer}>
+    <View style={styles.container}>
       {title === "Task" ? (
         <>
           <TimerButton title={title} isActive={isActive} onToggle={onToggle} />
@@ -22,7 +29,7 @@ export function Timer({ title, time, isActive, onToggle }: TimerProps) {
 }
 
 const styles = StyleSheet.create({
-  timerContainer: {
+  container: {
     flex: 1,
     alignItems: "center",
     justifyContent: "space-between",

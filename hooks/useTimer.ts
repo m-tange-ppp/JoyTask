@@ -19,32 +19,25 @@ const STORAGE_KEYS = {
   DAILY_RECORDS: "@joy_task_timer/daily_records",
 };
 
+const INITIAL_TIME_STATE: TimeState = {
+  hours: 0,
+  minutes: 0,
+  seconds: 0,
+  milliseconds: 0,
+};
+
 export function useTimer() {
-  const [joyTime, setJoyTime] = useState<TimeState>({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    milliseconds: 0,
-  });
+  const [joyTime, setJoyTime] = useState<TimeState>({ ...INITIAL_TIME_STATE });
   const [taskTime, setTaskTime] = useState<TimeState>({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    milliseconds: 0,
+    ...INITIAL_TIME_STATE,
   });
   const [isJoyActive, setIsJoyActive] = useState(false);
   const [isTaskActive, setIsTaskActive] = useState(false);
   const [totalJoyTime, setTotalJoyTime] = useState<TimeState>({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    milliseconds: 0,
+    ...INITIAL_TIME_STATE,
   });
   const [totalTaskTime, setTotalTaskTime] = useState<TimeState>({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    milliseconds: 0,
+    ...INITIAL_TIME_STATE,
   });
   const [dailyRecords, setDailyRecords] = useState<DailyTimeRecord>({});
 

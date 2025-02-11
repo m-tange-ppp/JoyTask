@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { PanResponder, Animated } from "react-native";
-import { TimeState } from "@/types/time";
 
 type UseSwipeGestureProps = {
   onSwipeComplete: () => void;

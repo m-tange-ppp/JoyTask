@@ -1,9 +1,16 @@
-import { View, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+} from "react-native";
 import { ThemedText } from "../ThemedText";
 import { TimeState } from "@/types/timer";
 import { calculateTotalTime } from "@/utils/timeCalculations";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "react-native";
+import { useState, useEffect, useMemo } from "react";
 
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const DAY_BUTTON_WIDTH = (WINDOW_WIDTH - 40 - 12 * 6) / 7;
@@ -25,12 +32,39 @@ export function Calendar({
   onSelectDate,
 }: CalendarProps) {
   const colors = Colors[useColorScheme() ?? "light"];
-  const today = new Date();
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(today.getDate() - i);
-    return date.toISOString().split("T")[0];
-  }).reverse();
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  // 日付が変わったときに更新
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      if (now.getDate() !== currentDate.getDate()) {
+        setCurrentDate(now);
+      }
+    }, 1000 * 60); // 1分ごとにチェック
+
+    return () => clearInterval(timer);
+  }, [currentDate]);
+
+  const dates = useMemo(() => {
+    return Array.from({ length: 30 }, (_, i) => {
+      const date = new Date(currentDate);
+      date.setHours(0, 0, 0, 0);
+      date.setDate(currentDate.getDate() - i);
+      return date.toISOString().slice(0, 10);
+    }).reverse();
+  }, [currentDate]);
+
+  // 表示されている月を取得
+  const months = useMemo(() => {
+    return [
+      ...new Set(
+        dates.map((date) =>
+          new Date(date).toLocaleDateString("ja-JP", { month: "long" })
+        )
+      ),
+    ];
+  }, [dates]);
 
   const getButtonStyle = (date: string) => {
     const record = records[date];
@@ -72,7 +106,21 @@ export function Calendar({
 
   return (
     <View style={styles.container}>
-      <View style={styles.daysContainer}>
+      <View style={styles.monthContainer}>
+        <ThemedText style={styles.monthText}>
+          {months.map((month, index) => (
+            <ThemedText key={month} style={styles.monthText}>
+              {month}
+              {index < months.length - 1 ? " - " : ""}
+            </ThemedText>
+          ))}
+        </ThemedText>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {dates.map((date) => {
           const dayText = new Date(date).toLocaleDateString("ja-JP", {
             weekday: "short",
@@ -89,7 +137,7 @@ export function Calendar({
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -98,10 +146,19 @@ const styles = StyleSheet.create({
   container: {
     marginVertical: 10,
   },
-  daysContainer: {
+  monthContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  monthText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  scrollContent: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 0,
+    gap: 12,
+    paddingHorizontal: 20,
   },
   dayButton: {
     width: DAY_BUTTON_WIDTH,

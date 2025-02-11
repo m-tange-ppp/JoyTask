@@ -12,13 +12,6 @@ export type DailyTimeRecord = {
   };
 };
 
-export type TimerProps = {
-  title: string;
-  time: TimeState;
-  isActive: boolean;
-  onToggle: () => void;
-};
-
 export type TimerState = {
   time: TimeState;
   isActive: boolean;
